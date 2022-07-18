@@ -27,5 +27,5 @@ export const styles = StyleSheet.create({
     color: "white",
   },
   imageContainer: { position: "absolute" },
-  image: { height: SQUARE_SIDE / 2, aspectRatio: 1 },
+  image: { height: SQUARE_SIDE/3, aspectRatio: 1 },
 });

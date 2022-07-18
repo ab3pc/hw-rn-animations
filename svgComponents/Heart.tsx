@@ -15,7 +15,7 @@ export const Heart = ({
     <AnimatedG
       fill={fill || "none"}
       transform="rotate(225 150 121)"
-      stroke={"#8b0000"}
+      stroke={"red"}
       strokeWidth={5}
       animatedProps={animatedProps || {}}
     >

@@ -19,10 +19,12 @@ const items = [
 ];
 
 const HorizontalScroll = () => {
+
   const translateX = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     translateX.value = event.contentOffset.x;
+  
   });
 
   return (
@@ -36,7 +38,7 @@ const HorizontalScroll = () => {
         showsHorizontalScrollIndicator={false}
       >
         {items.map((item, index) => {
-          return <Page index={index} item={item} key={item.id} />;
+          return <Page index={index} item={item} key={item.id} translateXOuter={translateX}/>;
         })}
       </Animated.ScrollView>
       <View style={styles.reactionsContainer}>
