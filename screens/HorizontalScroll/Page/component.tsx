@@ -1,13 +1,14 @@
 import React, { FC } from "react";
 import { View, Image, Dimensions } from "react-native";
-import { Gesture, GestureDetector, GestureHandlerRootView, PanGestureHandler, PanGestureHandlerGestureEvent } from "react-native-gesture-handler";
-import Animated, { Extrapolate, interpolate, interpolateColor, useAnimatedGestureHandler, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import { Gesture, GestureDetector, GestureHandlerRootView, PanGestureHandler, PanGestureHandlerGestureEvent, TapGestureHandler  } from "react-native-gesture-handler";
+import Animated, { Extrapolate, interpolate, interpolateColor, useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, withSpring, runOnJS, SharedValue } from "react-native-reanimated";
 import { styles } from "./styles";
 
 type IProps = {
   item: ItemType 
   index: number
   translateXOuter: Animated.SharedValue<number>
+  setStopScroll: (value:boolean) => void
 };
 type ItemType = {
   image: any
@@ -17,9 +18,11 @@ type ItemType = {
 const { width } = Dimensions.get("window");
 const squereSide = width / 1.25;
 
-const Page: FC<IProps> = ({ item, index, translateXOuter }) => {
+const Page: FC<IProps> = ({ item, index, translateXOuter, setStopScroll }) => {
   const inputRange = [(index-1) * width, index * width, (index+1)*width]
-
+  const handleStopScroll = (value:boolean) => {
+    setStopScroll(value);
+  }
   const animatedSquereStyle = useAnimatedStyle(() => {
     const scale = interpolate(translateXOuter.value, 
       inputRange,
@@ -50,93 +53,58 @@ const Page: FC<IProps> = ({ item, index, translateXOuter }) => {
   })
 
   const backgroundStyles = useAnimatedStyle(() => {
-
     const backgroundColor = interpolateColor(
       translateXOuter.value,
       [0, width, width * 2],
       ["violet", "orange", "grey"]
     );
-    
     return {backgroundColor};
   }, []);
 
-  const currentTranslateX = useSharedValue(0);
-  const currentTranslateY = useSharedValue(0);
-  const context = useSharedValue({ x: 0, y: 0 });
-  const SIZE = 80;
-  const gesture = Gesture.Pan()
-  .onStart(() => {
-    context.value = { x: currentTranslateX.value, y: currentTranslateY.value };
-  })
-  .onUpdate((event) => {
-    console.log(event.translationX);
-    console.log(event.translationY);
-    // currentTranslateX.value = event.translationX + context.value.x;
-    // currentTranslateY.value = event.translationY + context.value.y;
-  })
-  .onEnd(() => {
-    // if (currentTranslateX.value > width / 2) {
-    //   currentTranslateX.value = width - SIZE;
-    // } else {
-    //   currentTranslateX.value = 0;
-    // }
+  const startingPosition = 0;
+  const currentTranslateX = useSharedValue(startingPosition);
+  const currentTranslateY = useSharedValue(startingPosition);
+  const pressed: SharedValue<boolean> = useSharedValue(false);
+
+  const eventHandler = useAnimatedGestureHandler<PanGestureHandlerGestureEvent>({
+    onStart: () => {
+      pressed.value = true;
+      runOnJS(handleStopScroll)(false)
+    },
+    onActive: (event) => {
+      currentTranslateX.value = startingPosition + event.translationX;
+      currentTranslateY.value = startingPosition + event.translationY;
+    },
+    onEnd: () => {
+      pressed.value = false;
+      currentTranslateX.value = withSpring(startingPosition);
+      currentTranslateY.value = withSpring(startingPosition);
+      runOnJS(handleStopScroll)(true)
+    },
   });
-  // .onActive: (event, context) => {
-  //   currentTranslateX.value = event.translationX + context.translateX;
-  //   currentTranslateY.value = event.translationY + context.translateY;
 
-  //   console.log(event.translationX);
-    
-  // },
-  // .onEnd: (e) => {}
-
-  // const panGuestureEvent = useAnimatedGestureHandler<PanGestureHandlerGestureEvent, ContextType>({
-  //   onStart: (e, context) => {
-  //     context.translateX = currentTranslateX.value;
-  //     context.translateY = currentTranslateX.value;
-  //   },
-  //   onActive: (event, context) => {
-  //     currentTranslateX.value = event.translationX + context.translateX;
-  //     currentTranslateY.value = event.translationY + context.translateY;
-
-  //     console.log(event.translationX);
-      
-  //   },
-  //   onEnd: (e) => {}
-  // })
-
-  const moveImageStyle = useAnimatedStyle(() => {
-     return {
+  const imageMove = useAnimatedStyle(() => {
+    return {
       transform: [
-        {
-          translateX: currentTranslateX.value
-        },
-        {
-          translateY: currentTranslateY.value
-        },
-      ]
-     }
-  })
+        { translateX: currentTranslateX.value },
+        { translateY: currentTranslateY.value },
+        { scale: withSpring(pressed.value ? 1.5 : 1)}
+      ],
+    };
+  });
 
   return (
    
     <Animated.View key={index}  style={[styles.page, backgroundStyles]}>
       <Animated.View style={[styles.square, animatedSquereStyle]}></Animated.View>
- 
-     
-    
-      <Animated.View style={[styles.imageContainer, animatedImageStyle]}>
-      <GestureHandlerRootView>
-      <GestureDetector gesture={gesture}>
-      <Image source={item.image} style={[styles.image]} />
-        </GestureDetector>
-  
-        </GestureHandlerRootView> 
-       
-      </Animated.View>
-      
+        <Animated.View style={[styles.imageContainer, animatedImageStyle]}>
+          <GestureHandlerRootView>
+             <PanGestureHandler onGestureEvent={eventHandler}>
+                <Animated.Image source={item.image} style={[styles.image, imageMove]} />
+             </PanGestureHandler>
+          </GestureHandlerRootView> 
+       </Animated.View>
     </Animated.View>
-    
   );
 };
 
