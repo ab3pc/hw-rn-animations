@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   interpolate,
   interpolateColor,
@@ -7,6 +7,11 @@ import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
   withTiming,
+  Easing,
+  withRepeat,
+  withDelay,
+  useAnimatedStyle,
+  Extrapolate
 } from "react-native-reanimated";
 
 import { CAT_1, CAT_2, CAT_3 } from "../../assets";
@@ -22,10 +27,32 @@ const items = [
   { id: 3, image: CAT_3, color: "grey" },
 ];
 
+
+const Pulse = () => {
+  const animation = useSharedValue(0);
+  animation.value = withDelay(0,withRepeat(withTiming(1, {
+        duration: 800,easing: Easing.linear, }), 1, false)
+  );
+  const animatedStyles = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      animation.value,
+      [0, 1],
+      [0.6, 0],
+      Extrapolate.CLAMP
+    );
+    return {
+      opacity: opacity,
+      transform: [{ scale: animation.value }],
+    };
+  });
+  return <Animated.View style={[styles.circle, animatedStyles]} />;
+};
+
+
 const HorizontalScroll = () => {
   const [stopScroll, setStopScroll] = useState<boolean>(true);
   const translateX = useSharedValue(0);
-
+  const [pulse, setPulse] = useState([1]);
   const scrollHandler = useAnimatedScrollHandler((event) => {
     translateX.value = event.contentOffset.x;
   
@@ -36,34 +63,35 @@ const HorizontalScroll = () => {
   const pressedBroken = useSharedValue(0);
 
   const eventHandlerHeart = () => {
+    setPulse((prev) => [...prev, 1]);
     pressedHeart.value = withTiming(1) ;
     setTimeout(() => {
       pressedHeart.value = withTiming(0);
-    },500)
+    },350)
   }
 
   const eventHandlerBrokenHeart = () => {
     pressedBroken.value = withTiming(1) ;
     setTimeout(() => {
       pressedBroken.value = withTiming(0);
-    },500)
+    },400)
   }
-
-
 
   const animatedPropsHeart = useAnimatedProps(() => {
     const fillValue = interpolateColor(pressedHeart.value, [0, 1], ["red", "transparent"]);  
+   
     return {
-        fill: fillValue
-    }
+        fill: fillValue,
+    }   
   });
+
   const animatedPropsBroken = useAnimatedProps(() => {
     const fillValue = interpolateColor(pressedBroken.value, [0, 1], ["transparent", "black" ]);  
     return {
-        fill: fillValue
+        fill: fillValue,
+        transform: [{ scale: withTiming(pressedBroken.value ? 0.95 : 1) }],
     }
   });
-
 
   return (
     <Animated.View style={styles.container}>
@@ -81,22 +109,24 @@ const HorizontalScroll = () => {
         })}
       </Animated.ScrollView>
       <View style={styles.reactionsContainer}>
+    
       <Pressable onPress={eventHandlerBrokenHeart}>
-          <BrokenHeart animatedProps={animatedPropsBroken}/>
-        </Pressable>
+          <BrokenHeart animatedProps={animatedPropsBroken}/>  
+       </Pressable>
       
         <Pressable onPress={eventHandlerHeart }>
+          <View style={{ alignItems: 'center', justifyContent: 'center'}}>
           <Heart fill='red' animatedProps={animatedPropsHeart}/>
-        </Pressable>
-       
-    
-       
-       
+          {pulse.map((item, index) => (
+          <Pulse key={index}/>
+        ))}
+          </View>
          
-  
-      
-        <Bell />
+        </Pressable>
+        
+         <Bell />
       </View>
+    
     </Animated.View>
   );
 };

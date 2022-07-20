@@ -1,12 +1,13 @@
 import { StyleSheet, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { HorizontalScroll } from "./screens/HorizontalScroll";
 
 export default function App() {
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <HorizontalScroll />
-    </View>
+    </GestureHandlerRootView>
   );
 }
 

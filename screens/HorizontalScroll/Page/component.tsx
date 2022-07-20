@@ -98,11 +98,11 @@ const Page: FC<IProps> = ({ item, index, translateXOuter, setStopScroll }) => {
     <Animated.View key={index}  style={[styles.page, backgroundStyles]}>
       <Animated.View style={[styles.square, animatedSquereStyle]}></Animated.View>
         <Animated.View style={[styles.imageContainer, animatedImageStyle]}>
-          <GestureHandlerRootView>
+     
              <PanGestureHandler onGestureEvent={eventHandler}>
                 <Animated.Image source={item.image} style={[styles.image, imageMove]} />
              </PanGestureHandler>
-          </GestureHandlerRootView> 
+          
        </Animated.View>
     </Animated.View>
   );
